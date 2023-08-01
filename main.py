@@ -1,7 +1,8 @@
 import logging
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.dispatcher.filters import Command
-from bot_handlers import cmd_start, cmd_help, cmd_get_minutes, process_excel_file, cmd_update_excel, button_handler, get_minutes_directly, callback_data 
+from bot_handlers import cmd_start, process_excel_file, get_minutes_directly, button_handler
+from keyboards import callback_data
 from config import TOKEN
 
 logging.basicConfig(level=logging.INFO)
