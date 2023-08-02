@@ -1,8 +1,8 @@
 import logging
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.dispatcher.filters import Command
-from bot_handlers import cmd_start, process_excel_file, get_minutes_directly, button_handler
-from keyboards import callback_data
+from handlers.bot_handlers import cmd_start, process_excel_file, get_minutes_directly, button_handler
+from keyboards.keyboards import callback_data
 from config import TOKEN
 
 logging.basicConfig(level=logging.INFO)
@@ -19,3 +19,5 @@ dp.register_message_handler(process_excel_file, content_types=types.ContentTypes
 if __name__ == '__main__':
     from aiogram import executor
     executor.start_polling(dp, skip_updates=True)
+
+
