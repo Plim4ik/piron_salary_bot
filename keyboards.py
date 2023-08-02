@@ -24,8 +24,10 @@ def get_force_update_keyboard():
     keyboard_force_update.add(InlineKeyboardButton("Нет", callback_data=callback_data.new(command="start")))
     return keyboard_force_update
 
-def get_minutes_keyboard():
+def get_minutes_keyboard(user_id):
     keyboard_minutes = get_back_keyboard()
-    keyboard_minutes.add(InlineKeyboardButton("Да", callback_data=callback_data.new(command="force_update_excel")))
+    if user_id in ADMINS:
+        keyboard_minutes.add(InlineKeyboardButton("Да", callback_data=callback_data.new(command="force_update_excel")))
     keyboard_minutes.add(InlineKeyboardButton("Нет", callback_data=callback_data.new(command="get_minutes_directly")))
     return keyboard_minutes
+

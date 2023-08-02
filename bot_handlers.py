@@ -8,22 +8,26 @@ from config import EXCEL_FOLDER, ADMINS, ALLOWED_USERS
 from keyboards import get_start_keyboard, get_back_keyboard, get_force_update_keyboard, get_minutes_keyboard
 
 async def button_handler(callback_query: types.CallbackQuery, callback_data: dict):
+    user_id = callback_query.from_user.id
     # Получаем команду из callback_data
     command = callback_data["command"]
 
     if command == "help":
         await cmd_help(callback_query.message)
     elif command == "update_excel":
-        await cmd_update_excel(callback_query.message)
-    elif command == "get_minutes":
-        await cmd_get_minutes(callback_query.message)
+        await cmd_update_excel(callback_query.message, user_id)
+    if command == "get_minutes":
+        await cmd_get_minutes(callback_query.message, user_id)
     elif command == "start":
         await callback_query.message.edit_text('Привет! Я бот, который поможет вам подсчитать суммарное количество минут на основе вашего файла Excel.', reply_markup=get_start_keyboard(callback_query.from_user.id))
     elif command == "force_update_excel":
         await cmd_force_update_excel(callback_query)
     elif command == "confirm_force_update":
         # Запрашиваем новый файл Excel у пользователя
-        await callback_query.message.answer('Пожалуйста, отправьте новый файл Excel.')
+        # await callback_query.message.answer('Пожалуйста, отправьте новый файл Excel.')
+        await callback_query.message.bot.edit_message_text(chat_id=callback_query.message.chat.id, message_id=callback_query.message.message_id, text='Пожалуйста, отправьте новый файл Excel.', reply_markup=get_back_keyboard())
+
+
 
     # Завершаем обратный вызов, чтобы кнопка перестала "грузиться"
     await callback_query.answer()
@@ -39,17 +43,18 @@ async def cmd_force_update_excel(callback_query: types.CallbackQuery):
     await callback_query.message.edit_text('Вы уверены, что хотите принудительно обновить файл Excel?', reply_markup=get_force_update_keyboard())
 
 async def cmd_help(message: types.Message):
-    await message.bot.send_message(message.chat.id, 'Отправьте мне файл Excel, и я подсчитаю суммарное количество минут.', reply_markup=get_back_keyboard())
+   await message.bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text='Отправьте мне файл Excel, и я подсчитаю суммарное количество минут.', reply_markup=get_back_keyboard())
 
-async def cmd_update_excel(message: types.Message):
-    if message.from_user.id not in ADMINS:
+async def cmd_update_excel(message: types.Message, user_id: int): 
+    # Проверяем доступ пользователя по user_id
+    if user_id not in ADMINS:
         await message.answer("Извините, у вас нет доступа к этому функционалу.")
         return
 
     # Проверяем наличие файлов Excel в папке
     excel_files = [f for f in os.listdir(EXCEL_FOLDER) if f.endswith('.xlsx')]
     if not excel_files:
-        await message.bot.send_message(message.chat.id, 'Пожалуйста, отправьте мне файл Excel.', reply_markup=get_back_keyboard())
+        await message.bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id-1, text='Пожалуйста, отправьте мне файл Excel.', reply_markup=get_back_keyboard())
         return
 
     # Сортируем файлы по дате изменения и берем самый свежий
@@ -59,15 +64,17 @@ async def cmd_update_excel(message: types.Message):
 
     # Если файл старше одного дня, предлагаем пользователю принудительное обновление
     if datetime.now() - modification_time > timedelta(days=1):
-        await message.bot.send_message(message.chat.id, 'Ваш файл Excel старше одного дня. Вы хотите обновить его?', reply_markup=get_force_update_keyboard())
+        await message.bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text='Ваш файл Excel старше одного дня. Вы хотите обновить его?', reply_markup=get_force_update_keyboard())
+        # await message.bot.send_message(message.chat.id, 'Ваш файл Excel старше одного дня. Вы хотите обновить его?', reply_markup=get_force_update_keyboard())
     else:
-        await message.bot.send_message(message.chat.id, 'Ваш файл Excel свежий. Вы хотите его обновить?', reply_markup=get_force_update_keyboard())
+        await message.bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text='Ваш файл Excel свежий. Вы хотите его обновить?', reply_markup=get_force_update_keyboard())
+        # await message.bot.send_message(message.chat.id, 'Ваш файл Excel свежий. Вы хотите его обновить?', reply_markup=get_force_update_keyboard())
 
-async def cmd_get_minutes(message: types.Message):
+async def cmd_get_minutes(message: types.Message, user_id: int):
     # Проверяем наличие файлов Excel в папке
     excel_files = [f for f in os.listdir(EXCEL_FOLDER) if f.endswith('.xlsx')]
     if not excel_files:
-        await message.bot.send_message(message.chat.id, 'Пожалуйста, сначала отправьте мне файл Excel.', reply_markup=get_back_keyboard())
+        await message.bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text='Пожалуйста, отправьте мне файл Excel.', reply_markup=get_back_keyboard(user_id))
         return
 
     # Сортируем файлы по дате изменения и берем самый свежий
@@ -77,9 +84,11 @@ async def cmd_get_minutes(message: types.Message):
 
     # Если файл старше одного дня, предлагаем пользователю обновить его
     if datetime.now() - modification_time > timedelta(days=1):
-        await message.bot.send_message(message.chat.id, 'Ваш файл Excel старше одного дня. Вы хотите обновить его прежде чем получить минуты?', reply_markup=get_minutes_keyboard())
+        await message.bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text='Ваш файл Excel старше одного дня. Вы хотите обновить его прежде чем получить минуты?', reply_markup=get_minutes_keyboard(user_id))
+        # await message.bot.send_message(message.chat.id, 'Ваш файл Excel старше одного дня. Вы хотите обновить его прежде чем получить минуты?', reply_markup=get_minutes_keyboard())
     else:
-        await message.bot.send_message(message.chat.id, 'Ваш файл Excel свежий. Вы хотите его обновить перед подсчетом минут?', reply_markup=get_minutes_keyboard())
+        await message.bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text='Ваш файл Excel свежий. Вы хотите его обновить перед подсчетом минут?', reply_markup=get_minutes_keyboard(user_id))
+        # await message.bot.send_message(message.chat.id, 'Ваш файл Excel свежий. Вы хотите его обновить перед подсчетом минут?', reply_markup=get_minutes_keyboard())
 
 async def get_minutes_directly(callback_query: types.CallbackQuery):
     # Выполняем расчет минут
@@ -94,7 +103,17 @@ async def process_excel_file(message: types.Message):
         await message.answer("Извините, у вас нет доступа к этому функционалу.")
         return
     if message.document:
-        await message.document.download(destination_dir=EXCEL_FOLDER)
-        await message.bot.send_message(message.chat.id, 'Файл успешно сохранен. Вы можете использовать команду /get_minutes для подсчета минут.', reply_markup=get_back_keyboard())
+        # Путь к файлу внутри папки EXCEL_FOLDER с оригинальным именем файла
+        file_name = message.document.file_name
+        file_path = os.path.join(EXCEL_FOLDER, file_name)
+        await message.document.download(destination_file=file_path)  # Использование destination_file вместо destination
+        
+        # Удаляем сообщение с файлом из чата
+        await message.delete()
+
+        # Отправляем сообщение о том, что файл успешно сохранен, и указываем название файла
+        success_text = f'Файл успешно сохранен. \nНазвание файла: {file_name}.'
+        await message.bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id-1, text=success_text, reply_markup=get_back_keyboard())
     else:
-        await message.bot.send_message(message.chat.id, 'Пожалуйста, отправьте мне файл Excel.', reply_markup=get_back_keyboard())
+        await message.bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id-1, text='Пожалуйста, отправьте мне файл Excel.', reply_markup=get_back_keyboard())
+
