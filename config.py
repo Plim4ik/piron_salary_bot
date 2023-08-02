@@ -8,4 +8,8 @@ ALLOWED_USERS = {
     246039192: "Оксана",
     961519334: "Леонид",
 }
+OWNERS=[246039192, 961519334]
 GROUP_CHAT_ID = 999832526
+EXCEL_REPORTS_FOLDER = "/Users/plimrecords/Documents/GitHub/piron_salary_bot/Excel_reports"
+EXCEL_OUTPUT_FOLDER = "/Users/plimrecords/Documents/GitHub/piron_salary_bot/Excel_reports/Excel_output"
+

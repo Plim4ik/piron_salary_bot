@@ -4,7 +4,9 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command
 from help.minutes_calc import calculate_minutes
-from config import EXCEL_FOLDER, ADMINS, ALLOWED_USERS
+from help.report_processing import handle_report_file
+from config import EXCEL_FOLDER, ADMINS, ALLOWED_USERS, EXCEL_OUTPUT_FOLDER, EXCEL_REPORTS_FOLDER, OWNERS
+from help.report_processing import process_excel_file 
 from keyboards.keyboards import get_start_keyboard, get_back_keyboard, get_force_update_keyboard, get_minutes_keyboard
 
 async def button_handler(callback_query: types.CallbackQuery, callback_data: dict):
@@ -23,14 +25,22 @@ async def button_handler(callback_query: types.CallbackQuery, callback_data: dic
     elif command == "force_update_excel":
         await cmd_force_update_excel(callback_query)
     elif command == "confirm_force_update":
-        # Запрашиваем новый файл Excel у пользователя
-        # await callback_query.message.answer('Пожалуйста, отправьте новый файл Excel.')
         await callback_query.message.bot.edit_message_text(chat_id=callback_query.message.chat.id, message_id=callback_query.message.message_id, text='Пожалуйста, отправьте новый файл Excel.', reply_markup=get_back_keyboard())
-
+    elif command == "create_report":
+        await cmd_create_report(callback_query.message, user_id)
 
 
     # Завершаем обратный вызов, чтобы кнопка перестала "грузиться"
     await callback_query.answer()
+
+async def cmd_create_report(message: types.Message, user_id: int):
+    if user_id not in ADMINS:
+        await message.answer("Извините, у вас нет доступа к этой функции.")
+        return
+
+    # await message.answer("Пожалуйста, загрузите файл .xlsx для формирования отчета.")
+    await message.bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text="Пожалуйста, загрузите файл .xlsx для формирования отчета.", reply_markup=get_back_keyboard())
+
 
 async def cmd_start(message: types.Message):
     user_id = message.from_user.id
@@ -133,3 +143,33 @@ async def process_excel_file(message: types.Message):
     else:
         await message.bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id-1, text='Пожалуйста, отправьте мне файл Excel.', reply_markup=get_back_keyboard())
 
+
+# Обновляем функцию cmd_create_report
+async def cmd_create_report(message: types.Message, user_id: int):
+    if user_id not in ADMINS:
+        await message.answer("Извините, у вас нет доступа к этой функции.")
+        return
+
+    await message.answer("Пожалуйста, загрузите файл .xlsx для формирования отчета.", reply_markup=get_back_keyboard())
+
+# Добавляем новую функцию для обработки файла отчета
+async def process_report_file(message: types.Message):
+    user_id = message.from_user.id
+    if user_id not in ADMINS or message.document is None:
+        return
+
+    # Сохраняем файл
+    file_path = os.path.join(EXCEL_REPORTS_FOLDER, message.document.file_name)
+    await message.document.download(destination_file=file_path)
+
+    # Отправляем сообщение о том, что файл загружен
+    # await message.answer("Файл успешно загружен. Пожалуйста, подождите...")
+    await message.bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text="Файл успешно загружен. Пожалуйста, подождите...", reply_markup=get_back_keyboard())
+    # Обрабатываем файл
+    output_file_path = handle_report_file(file_path)  # Измените на handle_report_file
+    
+    await message.delete()
+
+    # Отправляем файл пользователю
+    with open(output_file_path, "rb") as file:
+        await message.answer_document(file, caption="Отчет сформирован.")
