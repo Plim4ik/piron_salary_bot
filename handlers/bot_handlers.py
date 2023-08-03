@@ -139,9 +139,9 @@ async def process_excel_file(message: types.Message):
 
         # Отправляем сообщение о том, что файл успешно сохранен, и указываем название файла
         success_text = f'Файл успешно сохранен. \nНазвание файла: {file_name}.'
-        await message.bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id-1, text=success_text, reply_markup=get_back_keyboard())
+        await message.bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id-2, text=success_text, reply_markup=get_back_keyboard())
     else:
-        await message.bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id-1, text='Пожалуйста, отправьте мне файл Excel.', reply_markup=get_back_keyboard())
+        await message.bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text='Пожалуйста, отправьте мне файл Excel.', reply_markup=get_back_keyboard())
 
 
 # Обновляем функцию cmd_create_report
@@ -164,7 +164,7 @@ async def process_report_file(message: types.Message):
 
     # Отправляем сообщение о том, что файл загружен
     # await message.answer("Файл успешно загружен. Пожалуйста, подождите...")
-    await message.bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text="Файл успешно загружен. Пожалуйста, подождите...", reply_markup=get_back_keyboard())
+    await message.bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id-1, text="Файл успешно загружен. Пожалуйста, подождите...", reply_markup=get_back_keyboard())
     # Обрабатываем файл
     output_file_path = handle_report_file(file_path)  # Измените на handle_report_file
     

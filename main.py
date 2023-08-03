@@ -5,6 +5,7 @@ from help.report_processing import process_excel_file
 from handlers.bot_handlers import cmd_start, process_excel_file, get_minutes_directly, button_handler, process_report_file
 from keyboards.keyboards import callback_data
 from config import TOKEN
+from fsm.states import BotStates, RegistrationStates
 
 logging.basicConfig(level=logging.INFO)
 
@@ -14,6 +15,13 @@ dp = Dispatcher(bot)
 dp.register_message_handler(cmd_start, Command('start'))
 dp.register_callback_query_handler(get_minutes_directly, callback_data.filter(command="get_minutes_directly"))
 dp.register_callback_query_handler(button_handler, callback_data.filter())
+
+dp.register_message_handler(register_user, commands=['start'], state="*")
+
+dp.register_message_handler(enter_first_name, state=RegistrationStates.enter_first_name)
+dp.register_message_handler(enter_last_name, state=RegistrationStates.enter_last_name)
+dp.register_message_handler(enter_phone_number, state=RegistrationStates.enter_phone_number)
+
 dp.register_message_handler(process_report_file, content_types=types.ContentTypes.DOCUMENT)
 dp.register_message_handler(process_excel_file, content_types=types.ContentTypes.DOCUMENT)
 
